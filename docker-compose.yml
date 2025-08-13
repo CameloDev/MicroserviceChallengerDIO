@@ -1,0 +1,56 @@
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  
+  vendas-service:
+    build:
+      context: ./VendasService
+    ports:
+      - "5001:80"
+    depends_on:
+      - rabbitmq
+      - db-vendas
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+  
+  estoque-service:
+    build:
+      context: ./EstoqueService
+    ports:
+      - "5002:80"
+    depends_on:
+      - rabbitmq
+      - db-estoque
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+  
+  db-vendas:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Senha@123
+      MYSQL_DATABASE: vendas_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - vendas-data:/var/lib/mysql
+  
+  db-estoque:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Senha@123
+      MYSQL_DATABASE: estoque_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - estoque-data:/var/lib/mysql
+
+volumes:
+  vendas-data:
+  estoque-data:

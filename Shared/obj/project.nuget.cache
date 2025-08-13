@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "bxJxnnQLxis=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\prozi\\csharp\\ECommerceMicroserviceToDIO\\Shared\\Shared.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\prozi\\.nuget\\packages\\system.text.json\\9.0.8\\system.text.json.9.0.8.nupkg.sha512"
+  ],
+  "logs": []
+}
