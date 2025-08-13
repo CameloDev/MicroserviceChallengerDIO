@@ -1,4 +1,4 @@
-// VendasService/Program.cs
+
 using Microsoft.EntityFrameworkCore;
 using VendasService.Data;
 using RabbitMQ.Client;
@@ -7,7 +7,7 @@ using VendasService.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<VendasDbContext>(options =>
-    options.UseMySQL(builder.Configuration.GetConnectionString("VendasConnection")
+    options.UseMySQL(builder.Configuration.GetConnectionString("MySqlConnection")
     ?? throw new InvalidOperationException("Connection string 'MySqlConnection' not found.")));
 
 builder.Services.AddSingleton<Task<IConnection>>(async sp =>

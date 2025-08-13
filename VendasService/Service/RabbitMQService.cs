@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Shared.Models;
 namespace VendasService.Services
 {
-    
+
     public class RabbitMQService : IRabbitMQService
     {
         private readonly Task<IConnection> _connection;
@@ -16,7 +16,6 @@ namespace VendasService.Services
         private readonly ILogger<RabbitMQService> _logger;
         private const string ExchangeName = "venda_realizada";
         private const string QueueName = "atualizar_estoque";
-
 
         public RabbitMQService(Task<IConnection> connection, ILogger<RabbitMQService> logger, Task<IChannel> channel)
         {
@@ -77,17 +76,18 @@ namespace VendasService.Services
         {
             try
             {
-                _channel?.CloseAsync();
-                _channel?.DisposeAsync();
-                _logger.LogInformation("Canal RabbitMQ fechado");
+                if (_channel != null)
+                {
+                    _channel.CloseAsync();
+                    _channel.DisposeAsync();
+                    _logger.LogInformation("Canal RabbitMQ fechado");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao fechar o canal RabbitMQ");
             }
-            GC.SuppressFinalize(this);
+
         }
-
-
     }
 }

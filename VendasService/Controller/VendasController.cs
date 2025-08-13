@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using VendasService.Data;
 using VendasService.Models;
 using Microsoft.EntityFrameworkCore;
+using Shared.Models;
+using VendasService.Services;
 
 namespace VendasService.Controllers
 {
@@ -10,10 +12,12 @@ namespace VendasService.Controllers
     public class VendasController : ControllerBase
     {
         private readonly VendasDbContext _context;
+        private readonly IRabbitMQService _rabbitService;
 
-        public VendasController(VendasDbContext context)
+        public VendasController(VendasDbContext context, IRabbitMQService rabbitService)
         {
             _context = context;
+            _rabbitService = rabbitService;
         }
 
         [HttpGet]
@@ -34,13 +38,11 @@ namespace VendasService.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Pedido>> CreatePedido(Pedido pedido)
+        public async Task<IActionResult> CriarVenda([FromBody] VendaRealizadaMessage venda)
         {
-            pedido.DataCriacao = DateTime.UtcNow;
-            _context.Pedidos.Add(pedido);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetPedido), new { id = pedido.Id }, pedido);
+            // Aqui você publica a mensagem
+            await _rabbitService.PublicarVendaRealizada(venda);
+            return Ok();
         }
 
         [HttpPut("{id}")]

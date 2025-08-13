@@ -13,6 +13,7 @@
           "Microsoft.EntityFrameworkCore.Design": "9.0.8",
           "MySql.EntityFrameworkCore": "9.0.6",
           "RabbitMQ.Client": "7.1.2",
+          "Shared": "1.0.0",
           "Swashbuckle.AspNetCore": "6.6.2"
         },
         "runtime": {
@@ -879,6 +880,17 @@
             "fileVersion": "0.8.5.0"
           }
         }
+      },
+      "Shared/1.0.0": {
+        "dependencies": {
+          "System.Text.Json": "9.0.8"
+        },
+        "runtime": {
+          "Shared.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
       }
     }
   },
@@ -1405,6 +1417,11 @@
       "sha512": "sha512-TR4j17WeVSEb3ncgL2NqlXEqcy04I+Kk9CaebNDplUeL8XOgjkZ7fP4Wg4grBdPLIqsV86p2QaXTkZoRMVOsew==",
       "path": "zstdsharp.port/0.8.5",
       "hashPath": "zstdsharp.port.0.8.5.nupkg.sha512"
+    },
+    "Shared/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     }
   }
 }
