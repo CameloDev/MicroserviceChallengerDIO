@@ -50,13 +50,16 @@ namespace VendasService.Services
         {
             try
             {
+                var connection = await _connection;
+                using var channel = await connection.CreateChannelAsync();
+
                 var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
 
                 var props = new BasicProperties();
                 props.ContentType = "text/plain";
                 props.DeliveryMode = (DeliveryModes)2;
 
-                await _channel.BasicPublishAsync(
+                await channel.BasicPublishAsync(
                     exchange: ExchangeName,
                     routingKey: string.Empty,
                     mandatory: false,

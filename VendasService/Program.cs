@@ -6,6 +6,7 @@ using VendasService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddDbContext<VendasDbContext>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("MySqlConnection")
     ?? throw new InvalidOperationException("Connection string 'MySqlConnection' not found.")));
@@ -31,7 +32,7 @@ builder.Services.AddSingleton<Task<IChannel>>(async sp =>
 });
 
 builder.Services.AddScoped<IRabbitMQService, RabbitMQService>();
-
+builder.Services.AddScoped<VendaService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

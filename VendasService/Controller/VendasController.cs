@@ -12,18 +12,21 @@ namespace VendasService.Controllers
     public class VendasController : ControllerBase
     {
         private readonly VendasDbContext _context;
-        private readonly IRabbitMQService _rabbitService;
+        private readonly VendaService _vendasService;
 
-        public VendasController(VendasDbContext context, IRabbitMQService rabbitService)
+        public VendasController(VendasDbContext context, VendaService vendasService)
         {
             _context = context;
-            _rabbitService = rabbitService;
+            _vendasService = vendasService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Pedido>>> GetPedidos()
         {
-            return await _context.Pedidos.ToListAsync();
+            var pedidos = await _context.Pedidos
+                                        .Include(p => p.Itens)
+                                        .ToListAsync();
+            return pedidos;
         }
 
         [HttpGet("{id}")]
@@ -38,11 +41,17 @@ namespace VendasService.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CriarVenda([FromBody] VendaRealizadaMessage venda)
+        public async Task<IActionResult> CriarVenda([FromBody] Pedido pedido)
         {
-            // Aqui você publica a mensagem
-            await _rabbitService.PublicarVendaRealizada(venda);
-            return Ok();
+            try
+            {
+                var resultado = await _vendasService.CriarVendaAsync(pedido);
+                return Ok(resultado);
+            }
+            catch
+            {
+                return StatusCode(500, "Erro ao processar a venda");
+            }
         }
 
         [HttpPut("{id}")]
