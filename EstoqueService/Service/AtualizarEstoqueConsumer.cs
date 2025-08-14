@@ -47,7 +47,6 @@ namespace EstoqueService.Services
                     
                     try
                     {
-                        // Processamento da mensagem
                         var body = ea.Body.ToArray();
                         _logger.LogDebug("Corpo da mensagem recebido: {length} bytes", body.Length);
                         

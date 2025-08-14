@@ -22,11 +22,9 @@ namespace VendasService.Services
             
             try
             {
-                // Obtenha a conexão e o canal de forma síncrona (evitando deadlocks)
                 _connection = connection.GetAwaiter().GetResult();
                 _channel = channel.GetAwaiter().GetResult();
 
-                // Configuração inicial do canal
                 ConfigureChannel().GetAwaiter().GetResult();
             }
             catch (Exception ex)
@@ -66,17 +64,14 @@ namespace VendasService.Services
             if (_disposed)
                 throw new ObjectDisposedException("RabbitMQService foi descartado");
 
-            // Cria um novo canal dedicado para esta operação RPC
             using var channel = await _connection.CreateChannelAsync();
             
             try
             {
-                // Configura fila de resposta temporária
                 var replyQueue = (await channel.QueueDeclareAsync(exclusive: true)).QueueName;
                 var correlationId = Guid.NewGuid().ToString();
                 var tcs = new TaskCompletionSource<VendaRespostaMessage>();
 
-                // Configura consumer para a resposta
                 var consumer = new AsyncEventingBasicConsumer(channel);
                 consumer.ReceivedAsync += (model, ea) =>
                 {
@@ -89,21 +84,18 @@ namespace VendasService.Services
                     return Task.CompletedTask;
                 };
 
-                // Inicia o consumer antes de publicar a mensagem
                 await channel.BasicConsumeAsync(
                     queue: replyQueue,
                     autoAck: true,
                     consumer: consumer);
 
-                // Configura propriedades da mensagem
                 var props = new BasicProperties();
                 props.CorrelationId = correlationId;
                 props.ReplyTo = replyQueue;
-                props.DeliveryMode = (DeliveryModes)2; // Persistente
+                props.DeliveryMode = (DeliveryModes)2;
 
                 _logger.LogInformation("Publicando mensagem para o PedidoId: {PedidoId}", message.PedidoId);
-                
-                // Publica a mensagem
+     
                 await channel.BasicPublishAsync(
                     exchange: ExchangeName,
                     routingKey: "",
@@ -111,7 +103,6 @@ namespace VendasService.Services
                     basicProperties: props,
                     body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
 
-                // Configura timeout para evitar espera infinita
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 
                 _logger.LogDebug("Aguardando resposta RPC...");
