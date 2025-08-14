@@ -53,15 +53,15 @@
           "dependencies": {
             "MMLib.SwaggerForOcelot": {
               "target": "Package",
-              "version": "[9.0.0, )"
-            },
-            "Microsoft.AspNetCore.OpenApi": {
-              "target": "Package",
-              "version": "[9.0.7, )"
+              "version": "[3.3.0, )"
             },
             "Ocelot": {
               "target": "Package",
               "version": "[24.0.1, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.5.0, )"
             }
           },
           "imports": [

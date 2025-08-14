@@ -1,26 +1,48 @@
 {
   "Routes": [
     {
-      "DownstreamPathTemplate": "/orders/{everything}",
+      "DownstreamPathTemplate": "/api/Vendas/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         { "Host": "localhost", "Port": 5001 }
       ],
       "UpstreamPathTemplate": "/vendas/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
       "SwaggerKey": "vendas"
     },
     {
-      "DownstreamPathTemplate": "/products/{everything}",
+      "DownstreamPathTemplate": "/api/Vendas",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "localhost", "Port": 5001 }
+      ],
+      "UpstreamPathTemplate": "/vendas",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "SwaggerKey": "vendas"
+    },
+    
+    {
+      "DownstreamPathTemplate": "/api/Produtos/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         { "Host": "localhost", "Port": 5002 }
       ],
       "UpstreamPathTemplate": "/estoque/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
+      "SwaggerKey": "estoque"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Produtos",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "localhost", "Port": 5002 }
+      ],
+      "UpstreamPathTemplate": "/estoque",
+      "UpstreamHttpMethod": ["GET", "POST"],
       "SwaggerKey": "estoque"
     }
   ],
+  
   "SwaggerEndPoints": [
     {
       "Key": "vendas",
@@ -43,7 +65,9 @@
       ]
     }
   ],
+  
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000"
+    "BaseUrl": "http://localhost:5000",
+    "DangerousAcceptAnyServerCertificateValidator": true
   }
 }

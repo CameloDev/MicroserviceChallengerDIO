@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using VendasService.Data;
 using RabbitMQ.Client;
 using VendasService.Services;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,7 +37,11 @@ builder.Services.AddScoped<IRabbitMQService, RabbitMQService>();
 builder.Services.AddScoped<VendaService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddMvc();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "VendasService", Version = "v1" });
+});
 
 var app = builder.Build();
 

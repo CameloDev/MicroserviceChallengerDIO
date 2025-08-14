@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using EstoqueService.Data;
 using EstoqueService.Services;
 using RabbitMQ.Client;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +31,11 @@ builder.Services.AddSingleton<IChannel>(channel);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddMvc();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "EstoqueService", Version = "v1" });
+});
 
 var app = builder.Build();
 
