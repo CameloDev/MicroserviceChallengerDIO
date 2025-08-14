@@ -23,7 +23,6 @@ public class VendaService
         try
         {
             _dbContext.Pedidos.Add(pedido);
-            await _dbContext.SaveChangesAsync();
             
             var mensagem = new VendaRealizadaMessage
             {
@@ -36,9 +35,26 @@ public class VendaService
                 }).ToList()
             };
 
-            await _rabbitService.PublicarVendaRealizada(mensagem);
+            try
+            {
+                var resposta = await _rabbitService.PublicarVendaRealizada(mensagem)
+                    .WaitAsync(TimeSpan.FromSeconds(30));
+                
+                _logger.LogInformation("Resposta recebida: {@Resposta}", resposta);
 
-            return pedido;
+                if (!resposta.EstoqueOK)
+                {
+                    throw new InvalidOperationException($"Estoque insuficiente: {resposta.Motivo}");
+                }
+
+                await _dbContext.SaveChangesAsync();
+                return pedido;
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.LogError(ex, "Timeout ao verificar estoque para PedidoId: {PedidoId}", pedido.Id);
+                throw new InvalidOperationException("Tempo excedido ao verificar estoque", ex);
+            }
         }
         catch (Exception ex)
         {

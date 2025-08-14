@@ -1,43 +1,58 @@
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
-using VendasService.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.WebEncoders.Testing;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using RabbitMQ.Client.Events;
 using Shared.Models;
+
 namespace VendasService.Services
 {
-
-    public class RabbitMQService : IRabbitMQService
+    public class RabbitMQService : IRabbitMQService, IDisposable
     {
-        private readonly Task<IConnection> _connection;
+        private readonly IConnection _connection;
         private readonly IChannel _channel;
         private readonly ILogger<RabbitMQService> _logger;
         private const string ExchangeName = "venda_realizada";
         private const string QueueName = "atualizar_estoque";
+        private bool _disposed;
 
         public RabbitMQService(Task<IConnection> connection, ILogger<RabbitMQService> logger, Task<IChannel> channel)
         {
-            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            try
+            {
+                // Obtenha a conexão e o canal de forma síncrona (evitando deadlocks)
+                _connection = connection.GetAwaiter().GetResult();
+                _channel = channel.GetAwaiter().GetResult();
 
-            _channel = channel.GetAwaiter().GetResult();
+                // Configuração inicial do canal
+                ConfigureChannel().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha na inicialização do RabbitMQService");
+                Dispose();
+                throw;
+            }
+        }
 
-            _channel.ExchangeDeclareAsync(
+        private async Task ConfigureChannel()
+        {
+            await _channel.ExchangeDeclareAsync(
                 exchange: ExchangeName,
                 type: ExchangeType.Fanout,
                 durable: true,
                 autoDelete: false);
 
-            _channel.QueueDeclareAsync(
+            await _channel.QueueDeclareAsync(
                 queue: QueueName,
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
 
-            _channel.QueueBindAsync(
+            await _channel.QueueBindAsync(
                 queue: QueueName,
                 exchange: ExchangeName,
                 routingKey: string.Empty);
@@ -46,51 +61,108 @@ namespace VendasService.Services
                 ExchangeName, QueueName);
         }
 
-        public async Task PublicarVendaRealizada(VendaRealizadaMessage message)
+        public async Task<VendaRespostaMessage> PublicarVendaRealizada(VendaRealizadaMessage message)
         {
+            if (_disposed)
+                throw new ObjectDisposedException("RabbitMQService foi descartado");
+
+            // Cria um novo canal dedicado para esta operação RPC
+            using var channel = await _connection.CreateChannelAsync();
+            
             try
             {
-                var connection = await _connection;
-                using var channel = await connection.CreateChannelAsync();
+                // Configura fila de resposta temporária
+                var replyQueue = (await channel.QueueDeclareAsync(exclusive: true)).QueueName;
+                var correlationId = Guid.NewGuid().ToString();
+                var tcs = new TaskCompletionSource<VendaRespostaMessage>();
 
-                var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message));
+                // Configura consumer para a resposta
+                var consumer = new AsyncEventingBasicConsumer(channel);
+                consumer.ReceivedAsync += (model, ea) =>
+                {
+                    if (ea.BasicProperties.CorrelationId == correlationId)
+                    {
+                        var response = JsonSerializer.Deserialize<VendaRespostaMessage>(
+                            Encoding.UTF8.GetString(ea.Body.ToArray()));
+                        tcs.SetResult(response!);
+                    }
+                    return Task.CompletedTask;
+                };
 
+                // Inicia o consumer antes de publicar a mensagem
+                await channel.BasicConsumeAsync(
+                    queue: replyQueue,
+                    autoAck: true,
+                    consumer: consumer);
+
+                // Configura propriedades da mensagem
                 var props = new BasicProperties();
-                props.ContentType = "text/plain";
-                props.DeliveryMode = (DeliveryModes)2;
+                props.CorrelationId = correlationId;
+                props.ReplyTo = replyQueue;
+                props.DeliveryMode = (DeliveryModes)2; // Persistente
 
+                _logger.LogInformation("Publicando mensagem para o PedidoId: {PedidoId}", message.PedidoId);
+                
+                // Publica a mensagem
                 await channel.BasicPublishAsync(
                     exchange: ExchangeName,
-                    routingKey: string.Empty,
+                    routingKey: "",
                     mandatory: false,
-                    props,
-                    body: body);
+                    basicProperties: props,
+                    body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
 
-                _logger.LogInformation("Mensagem publicada no RabbitMQ - PedidoId: {PedidoId}", message.PedidoId);
+                // Configura timeout para evitar espera infinita
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                
+                _logger.LogDebug("Aguardando resposta RPC...");
+                var resposta = await tcs.Task.WaitAsync(cts.Token);
+                _logger.LogInformation("Resposta RPC recebida para PedidoId: {PedidoId}", message.PedidoId);
+                
+                return resposta;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogError("Timeout ao aguardar resposta RPC para PedidoId: {PedidoId}", message.PedidoId);
+                throw new TimeoutException("Tempo excedido ao aguardar resposta do estoque");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao publicar mensagem no RabbitMQ");
+                _logger.LogError(ex, "Erro no RPC para PedidoId: {PedidoId}", message.PedidoId);
                 throw;
             }
+            finally
+            {
+                await channel.CloseAsync();
+            }
+        }
+
+        public IChannel GetChannelAsync()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException("RabbitMQService foi descartado");
+                
+            return _channel;
         }
 
         public void Dispose()
         {
+            if (_disposed) return;
+
             try
             {
-                if (_channel != null)
-                {
-                    _channel.CloseAsync();
-                    _channel.DisposeAsync();
-                    _logger.LogInformation("Canal RabbitMQ fechado");
-                }
+                _channel?.CloseAsync().GetAwaiter().GetResult();
+                _channel?.Dispose();
+                _logger.LogInformation("Canal RabbitMQ fechado");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao fechar o canal RabbitMQ");
             }
-
+            finally
+            {
+                _disposed = true;
+                GC.SuppressFinalize(this);
+            }
         }
     }
 }

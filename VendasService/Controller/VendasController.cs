@@ -45,6 +45,15 @@ namespace VendasService.Controllers
         {
             try
             {
+                var pedidoExistente = await _context.Pedidos.FindAsync(pedido.Id);
+                if (pedidoExistente != null)
+                {
+                    return Conflict(new { message = $"Já existe um pedido com o ID {pedido.Id}" });
+                }
+                if (pedido.Id <= 0)
+                {
+                     return BadRequest(new { message = "O ID do pedido deve ser maior que 0." });
+                }
                 var resultado = await _vendasService.CriarVendaAsync(pedido);
                 return Ok(resultado);
             }
@@ -77,7 +86,6 @@ namespace VendasService.Controllers
             return NoContent();
         }
 
-        // DELETE: api/vendas/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePedido(int id)
         {

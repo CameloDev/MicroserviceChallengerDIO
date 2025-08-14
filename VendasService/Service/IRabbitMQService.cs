@@ -4,6 +4,9 @@ namespace VendasService.Services
 {
     public interface IRabbitMQService : IDisposable
     {
-        Task PublicarVendaRealizada(VendaRealizadaMessage message);
+        Task<VendaRespostaMessage> PublicarVendaRealizada(VendaRealizadaMessage message);
+
+        IChannel GetChannelAsync();
+
     }
 }
