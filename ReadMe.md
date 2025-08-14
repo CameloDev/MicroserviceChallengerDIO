@@ -1,67 +1,111 @@
-# Desafio Técnico - Microserviços DIO
+# 📦 Desafio Técnico DIO — Arquitetura de Microserviços com .NET Core
 
-## Descrição do Desafio
-Desenvolver uma aplicação com arquitetura de microserviços para gerenciamento de estoque de produtos e vendas em uma plataforma de e-commerce. A comunicação entre os microserviços ocorre via **RabbitMQ**, e a autenticação é realizada via **JWT**.
+Este projeto faz parte de um **desafio técnico** da DIO e consiste no desenvolvimento de uma aplicação com arquitetura de **microserviços** para gerenciamento de estoque de produtos e vendas em uma plataforma de e-commerce.
 
-O sistema é composto por dois microserviços principais:  
+---
 
-- **Gestão de Estoque**: cadastra produtos e controla o estoque.  
-- **Gestão de Vendas**: realiza pedidos, valida estoque e notifica o serviço de estoque sobre vendas.
+## 🏗 Arquitetura do Sistema
 
-## Tecnologias Utilizadas
-- .NET Core (C#)  
-- Entity Framework Core  
-- RESTful API  
-- RabbitMQ (para comunicação assíncrona)  
-- JWT (para autenticação)  
-- Banco de dados relacional (MySQL)  
+O sistema é composto por dois microserviços principais:
 
-## Arquitetura do Sistema
-### Microserviço 1: Gestão de Estoque
-- Cadastro de produtos (nome, descrição, preço e quantidade)  
-- Consulta de produtos e estoque disponível  
-- Atualização automática de estoque após venda (integração com microserviço de vendas)  
+1. **Gestão de Estoque**
+   - Cadastro de produtos (nome, descrição, preço e quantidade).
+   - Consulta de produtos e estoque disponível.
+   - Atualização automática de estoque após venda (via RabbitMQ).
 
-### Microserviço 2: Gestão de Vendas
-- Criação de pedidos com validação do estoque  
-- Consulta de pedidos e seus status  
-- Notificação ao microserviço de estoque via RabbitMQ  
+2. **Gestão de Vendas**
+   - Criação de pedidos com validação de estoque.
+   - Consulta de pedidos e seus status.
+   - Notificação ao microserviço de estoque via RabbitMQ.
 
-### API Gateway
-- Ponto de entrada único para todas as requisições  
-- Redireciona chamadas para o microserviço apropriado  
+### 🔌 Comunicação Assíncrona
+- **RabbitMQ** é utilizado para enviar notificações de vendas e atualizar o estoque.
 
-### Comunicação Assíncrona
-- RabbitMQ é usado para enviar notificações de vendas e atualizar o estoque  
+### 🔐 Autenticação
+- A autenticação será implementada com **JWT**, garantindo que apenas usuários autenticados possam interagir com os microserviços.
 
-### Autenticação
-- JWT garante que apenas usuários autenticados possam interagir com os microserviços  
+### 🌐 API Gateway
+- Será utilizado o **Ocelot** para centralizar as requisições, com documentação via **SwaggerForOcelot**.
 
-## Funcionalidades Implementadas Até o Momento
-- Microserviço de **Vendas**:  
-  - Criação de pedidos e persistência no banco de dados  
-  - Notificação ao microserviço de estoque via RabbitMQ  
-  - Listagem de pedidos com itens incluídos (`Include` no EF Core)  
+---
 
-- Microserviço de **Estoque** (em desenvolvimento):  
-  - Estrutura básica para cadastro e consulta de produtos  
+## 🛠 Tecnologias Utilizadas
+- [.NET Core (C#)](https://dotnet.microsoft.com/)
+- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
+- [RESTful API](https://restfulapi.net/)
+- [RabbitMQ](https://www.rabbitmq.com/) (comunicação assíncrona)
+- [JWT](https://jwt.io/) (autenticação)
+- [MySQL](https://www.mysql.com/) (banco relacional)
+- [Ocelot](https://ocelot.readthedocs.io/en/latest/) (API Gateway)
+- [Swagger](https://swagger.io/) e [SwaggerForOcelot](https://github.com/Burgyn/MMLib.SwaggerForOcelot)
 
-- Configuração de **RabbitMQ** para comunicação assíncrona entre serviços  
-- Configuração de **Entity Framework** com MySQL  
-- Configuração de autenticação via **JWT**  
+---
 
-## Estrutura do Projeto
-- `VendasService/Models`: entidades `Pedido` e `PedidoItem`  
-- `VendasService/Data`: `VendasDbContext`  
-- `VendasService/Services`: `VendaService` e `RabbitMQService`  
-- `VendasService/Controllers`: endpoints para criar e consultar pedidos  
+## 📌 Status do Projeto
 
-## Próximos Passos
-- Finalizar microserviço de Estoque  
-- Implementar API Gateway para centralizar requisições  
-- Criar testes unitários para as funcionalidades principais  
-- Implementar monitoramento e logs  
-- Preparar para escalabilidade, adicionando novos microserviços (ex: pagamento, envio)  
+### Estado atual
+- [x] Comunicação básica via RabbitMQ recebendo evento `venda_realizada` no microserviço de estoque.
+- [x] Estrutura inicial dos microserviços de vendas e estoque.
+- [x] Swagger configurado para documentação.
+- [x] Ocelot configurado (SwaggerForOcelot ativo).
+- [ ] JWT implementado.
+- [ ] API Gateway finalizado (roteamento completo via Ocelot).
+- [ ] Microserviço de Estoque finalizado.
+- [ ] Fluxo de atualização automática de estoque concluído.
 
-## Observações
-O projeto é parte de um **desafio técnico da DIO** e visa demonstrar conhecimento em **microserviços, comunicação assíncrona, autenticação segura e boas práticas de desenvolvimento em .NET Core**.
+### Próximos passos
+- [ ] Implementar autenticação JWT em ambos os microserviços.
+- [ ] Configurar API Gateway (Ocelot) para rotear corretamente as requisições entre os serviços.
+- [ ] Finalizar microserviço de Estoque:
+  - [ ] CRUD completo de produtos.
+  - [ ] Integração com o evento `venda_realizada` para atualização do estoque.
+- [ ] Criar testes unitários para validação das funcionalidades principais.
+- [ ] Adicionar logs e monitoramento básico.
+- [ ] Revisar documentação no README.
+
+---
+
+## 📂 Estrutura do Projeto
+
+```text
+VendasService/
+├── Models/
+│   ├── Pedido.cs
+│   ├── PedidoItem.cs
+├── Data/
+│   ├── VendasDbContext.cs
+├── Services/
+│   ├── VendaService.cs
+│   ├── RabbitMQService.cs
+├── Controllers/
+│   ├── PedidoController.cs
+```
+## 🚀 Como Executar
+
+### Pré-requisitos
+- .NET SDK 8+
+- MySQL
+- RabbitMQ
+- Ocelot
+
+### Passos
+1. Clonar o repositório:
+  ```bash
+  git clone https://github.com/camelodev/MicroserviceChallengerDIO.git
+  ```
+2. Configurar o banco de dados MySQL no `appsettings.json` de cada microserviço.
+3. Iniciar o RabbitMQ.
+4. Restaurar as dependências:
+  ```bash
+  dotnet restore
+  ```
+5. Executar os microserviços:
+  ```bash
+  dotnet run --project VendasService
+  dotnet run --project EstoqueService
+  ```
+
+---
+
+## 📜 Licença
+Este projeto foi desenvolvido como parte de um desafio técnico da **DIO** e tem fins educacionais.

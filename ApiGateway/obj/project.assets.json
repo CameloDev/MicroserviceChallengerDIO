@@ -4559,7 +4559,7 @@
   },
   "projectFileDependencyGroups": {
     "net9.0": [
-      "MMLib.SwaggerForOcelot >= 3.3.0",
+      "MMLib.SwaggerForOcelot >= 4.0.0",
       "Ocelot >= 24.0.1",
       "Swashbuckle.AspNetCore >= 6.5.0"
     ]
@@ -4617,7 +4617,7 @@
         "dependencies": {
           "MMLib.SwaggerForOcelot": {
             "target": "Package",
-            "version": "[3.3.0, )"
+            "version": "[4.0.0, )"
           },
           "Ocelot": {
             "target": "Package",
@@ -4650,17 +4650,5 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "ApiGateway depende de MMLib.SwaggerForOcelot (>= 3.3.0) mas MMLib.SwaggerForOcelot 3.3.0 não foi encontrado. MMLib.SwaggerForOcelot 4.0.0 foi resolvido.",
-      "libraryId": "MMLib.SwaggerForOcelot",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    }
-  ]
+  }
 }

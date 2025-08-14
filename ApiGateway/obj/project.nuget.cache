@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Kfvv/bU1cyQ=",
+  "dgSpecHash": "USbw0NwyB2E=",
   "success": true,
   "projectFilePath": "C:\\Users\\prozi\\csharp\\ECommerceMicroserviceToDIO\\ApiGateway\\ApiGateway.csproj",
   "expectedPackageFiles": [
@@ -89,18 +89,5 @@
     "C:\\Users\\prozi\\.nuget\\packages\\system.threading\\4.3.0\\system.threading.4.3.0.nupkg.sha512",
     "C:\\Users\\prozi\\.nuget\\packages\\system.threading.tasks\\4.3.0\\system.threading.tasks.4.3.0.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "message": "ApiGateway depende de MMLib.SwaggerForOcelot (>= 3.3.0) mas MMLib.SwaggerForOcelot 3.3.0 não foi encontrado. MMLib.SwaggerForOcelot 4.0.0 foi resolvido.",
-      "projectPath": "C:\\Users\\prozi\\csharp\\ECommerceMicroserviceToDIO\\ApiGateway\\ApiGateway.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\prozi\\csharp\\ECommerceMicroserviceToDIO\\ApiGateway\\ApiGateway.csproj",
-      "libraryId": "MMLib.SwaggerForOcelot",
-      "targetGraphs": [
-        "net9.0"
-      ]
-    }
-  ]
+  "logs": []
 }
