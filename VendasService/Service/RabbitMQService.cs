@@ -1,3 +1,4 @@
+
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
@@ -10,11 +11,12 @@ namespace VendasService.Services
     public class RabbitMQService : IRabbitMQService, IDisposable
     {
         private readonly IConnection _connection;
-        private readonly IChannel _channel;
+        private IChannel _channel;
         private readonly ILogger<RabbitMQService> _logger;
         private const string ExchangeName = "venda_realizada";
         private const string QueueName = "atualizar_estoque";
         private bool _disposed;
+        private readonly SemaphoreSlim _channelLock = new(1, 1);
 
         public RabbitMQService(Task<IConnection> connection, ILogger<RabbitMQService> logger, Task<IChannel> channel)
         {
@@ -24,7 +26,6 @@ namespace VendasService.Services
             {
                 _connection = connection.GetAwaiter().GetResult();
                 _channel = channel.GetAwaiter().GetResult();
-
                 ConfigureChannel().GetAwaiter().GetResult();
             }
             catch (Exception ex)
@@ -37,26 +38,58 @@ namespace VendasService.Services
 
         private async Task ConfigureChannel()
         {
-            await _channel.ExchangeDeclareAsync(
-                exchange: ExchangeName,
-                type: ExchangeType.Fanout,
-                durable: true,
-                autoDelete: false);
+            await _channelLock.WaitAsync();
+            try
+            {
+                if (_channel.IsClosed)
+                {
+                    _channel.Dispose();
+                    _channel = await _connection.CreateChannelAsync();
+                }
 
-            await _channel.QueueDeclareAsync(
-                queue: QueueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null);
+                await _channel.ExchangeDeclareAsync(
+                    exchange: ExchangeName,
+                    type: ExchangeType.Fanout,
+                    durable: true,
+                    autoDelete: false);
 
-            await _channel.QueueBindAsync(
-                queue: QueueName,
-                exchange: ExchangeName,
-                routingKey: string.Empty);
+                await _channel.QueueDeclareAsync(
+                    queue: QueueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
 
-            _logger.LogInformation("Canal RabbitMQ configurado com exchange '{ExchangeName}' e queue '{QueueName}'",
-                ExchangeName, QueueName);
+                await _channel.QueueBindAsync(
+                    queue: QueueName,
+                    exchange: ExchangeName,
+                    routingKey: string.Empty);
+
+                _logger.LogInformation("Canal RabbitMQ configurado/reconfigurado");
+            }
+            finally
+            {
+                _channelLock.Release();
+            }
+        }
+
+        private async Task<IChannel> GetOrCreateChannelAsync()
+        {
+            await _channelLock.WaitAsync();
+            try
+            {
+                if (_channel?.IsClosed ?? true)
+                {
+                    _channel?.Dispose();
+                    _channel = await _connection.CreateChannelAsync();
+                    await ConfigureChannel();
+                }
+                return _channel;
+            }
+            finally
+            {
+                _channelLock.Release();
+            }
         }
 
         public async Task<VendaRespostaMessage> PublicarVendaRealizada(VendaRealizadaMessage message)
@@ -64,8 +97,9 @@ namespace VendasService.Services
             if (_disposed)
                 throw new ObjectDisposedException("RabbitMQService foi descartado");
 
+            // Mantido exatamente como você quer
             using var channel = await _connection.CreateChannelAsync();
-            
+
             try
             {
                 var replyQueue = (await channel.QueueDeclareAsync(exclusive: true)).QueueName;
@@ -95,7 +129,7 @@ namespace VendasService.Services
                 props.DeliveryMode = (DeliveryModes)2;
 
                 _logger.LogInformation("Publicando mensagem para o PedidoId: {PedidoId}", message.PedidoId);
-     
+
                 await channel.BasicPublishAsync(
                     exchange: ExchangeName,
                     routingKey: "",
@@ -104,11 +138,11 @@ namespace VendasService.Services
                     body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                
+
                 _logger.LogDebug("Aguardando resposta RPC...");
                 var resposta = await tcs.Task.WaitAsync(cts.Token);
                 _logger.LogInformation("Resposta RPC recebida para PedidoId: {PedidoId}", message.PedidoId);
-                
+
                 return resposta;
             }
             catch (OperationCanceledException)
@@ -127,12 +161,43 @@ namespace VendasService.Services
             }
         }
 
-        public IChannel GetChannelAsync()
+        public async Task<IChannel> GetChannelAsync()
         {
             if (_disposed)
                 throw new ObjectDisposedException("RabbitMQService foi descartado");
-                
-            return _channel;
+
+            await _channelLock.WaitAsync();
+            try
+            {
+                if (_channel == null || _channel.IsClosed)
+                {
+                    _logger.LogWarning("Canal fechado ou nulo - recriando...");
+               
+                    if (_channel != null)
+                    {
+                        try
+                        {
+                            await _channel.CloseAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug(ex, "Erro ao fechar canal antigo");
+                        }
+                    }
+
+                    _channel = await _connection.CreateChannelAsync();
+
+                    await ConfigureChannel();
+                    
+                    _logger.LogInformation("Novo canal criado e configurado");
+                }
+
+                return _channel;
+            }
+            finally
+            {
+                _channelLock.Release();
+            }
         }
 
         public void Dispose()
@@ -141,9 +206,17 @@ namespace VendasService.Services
 
             try
             {
-                _channel?.CloseAsync().GetAwaiter().GetResult();
-                _channel?.Dispose();
-                _logger.LogInformation("Canal RabbitMQ fechado");
+                _channelLock.Wait();
+                try
+                {
+                    _channel?.CloseAsync().GetAwaiter().GetResult();
+                    _channel?.Dispose();
+                    _logger.LogInformation("Canal RabbitMQ fechado");
+                }
+                finally
+                {
+                    _channelLock.Release();
+                }
             }
             catch (Exception ex)
             {

@@ -6,7 +6,7 @@ namespace VendasService.Services
     {
         Task<VendaRespostaMessage> PublicarVendaRealizada(VendaRealizadaMessage message);
 
-        IChannel GetChannelAsync();
+        Task<IChannel> GetChannelAsync();
 
     }
 }
