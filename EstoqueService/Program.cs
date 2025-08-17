@@ -32,9 +32,25 @@ builder.Services.AddSingleton<IChannel>(channel);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMvc();
-builder.Services.AddSwaggerGen(options =>
+builder.Services.AddSwaggerGen(c =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "EstoqueService", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "VendasService", Version = "v1" });
+
+    var jwtScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Insira: Bearer {seu_token}"
+    };
+
+    c.AddSecurityDefinition("Bearer", jwtScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtScheme, Array.Empty<string>() }
+    });
 });
 
 var app = builder.Build();

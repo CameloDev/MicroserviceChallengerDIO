@@ -24,7 +24,7 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = audience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(2)
         };
@@ -70,7 +70,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddMvc();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VendasService", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "VendasService", Version = "v1" });
+
+    var jwtScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Insira: Bearer {seu_token}"
+    };
+
+    c.AddSecurityDefinition("Bearer", jwtScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtScheme, Array.Empty<string>() }
+    });
 });
 
 var app = builder.Build();
