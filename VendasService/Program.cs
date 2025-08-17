@@ -3,8 +3,37 @@ using VendasService.Data;
 using RabbitMQ.Client;
 using VendasService.Services;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+var issuer = builder.Configuration["Jwt:Issuer"];
+var audience = builder.Configuration["Jwt:Audience"];
+var key = builder.Configuration["Jwt:Key"];
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(2)
+        };
+    });
+
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("SomenteVendedor", p => p.RequireRole("Vendedor", "Admin"));
+});
 
 builder.Services.AddDbContext<VendasDbContext>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("MySqlConnection")
@@ -24,13 +53,13 @@ builder.Services.AddSingleton<Task<IConnection>>(async sp =>
     return connection;
 });
 
-builder.Services.AddSingleton<Task<IChannel>>(async sp => 
+builder.Services.AddSingleton<Task<IChannel>>(async sp =>
 {
     var connectionTask = sp.GetRequiredService<Task<IConnection>>();
     var connection = await connectionTask;
 
     var channel = await connection.CreateChannelAsync();
-    
+
     return channel;
 });
 

@@ -4,6 +4,7 @@ using VendasService.Models;
 using Microsoft.EntityFrameworkCore;
 using Shared.Models;
 using VendasService.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VendasService.Controllers
 {
@@ -19,7 +20,7 @@ namespace VendasService.Controllers
             _context = context;
             _vendasService = vendasService;
         }
-
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Pedido>>> GetPedidos()
         {
@@ -40,6 +41,7 @@ namespace VendasService.Controllers
             return pedido;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CriarVenda([FromBody] Pedido pedido)
         {

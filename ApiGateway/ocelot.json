@@ -8,7 +8,11 @@
       ],
       "UpstreamPathTemplate": "/vendas/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
-      "SwaggerKey": "vendas"
+      "SwaggerKey": "vendas",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
     {
       "DownstreamPathTemplate": "/api/Vendas",
@@ -18,9 +22,12 @@
       ],
       "UpstreamPathTemplate": "/vendas",
       "UpstreamHttpMethod": ["GET", "POST"],
-      "SwaggerKey": "vendas"
+      "SwaggerKey": "vendas",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
-    
     {
       "DownstreamPathTemplate": "/api/Produtos/{everything}",
       "DownstreamScheme": "http",
@@ -29,7 +36,11 @@
       ],
       "UpstreamPathTemplate": "/estoque/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
-      "SwaggerKey": "estoque"
+      "SwaggerKey": "estoque",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
     {
       "DownstreamPathTemplate": "/api/Produtos",
@@ -39,10 +50,14 @@
       ],
       "UpstreamPathTemplate": "/estoque",
       "UpstreamHttpMethod": ["GET", "POST"],
-      "SwaggerKey": "estoque"
+      "SwaggerKey": "estoque",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     }
   ],
-  
+
   "SwaggerEndPoints": [
     {
       "Key": "vendas",
@@ -65,7 +80,7 @@
       ]
     }
   ],
-  
+
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5000",
     "DangerousAcceptAnyServerCertificateValidator": true
